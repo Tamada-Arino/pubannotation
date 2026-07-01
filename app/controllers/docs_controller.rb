@@ -320,25 +320,27 @@ class DocsController < ApplicationController
 				_doc
 			end
 
+			medium = nil
 			if params[:media].present?
 				medium = Medium.find_by(sourcedb: params[:media][:sourcedb], sourceid: params[:media][:sourceid])
 				raise ArgumentError, "Specified media does not exist." unless medium
 				hdoc[:medium_id] = medium.id
-
-				if params[:generate_text_from_media] == '1'
-					medium.file.open do |f|
-						caption = ImageCaptionService.new(f.path).call
-						hdoc = hdoc.to_h.except('text').merge(body: caption)
-					end
-				end
 			end
 
-			hdoc = Doc.hdoc_normalize!(hdoc, current_user, current_user.root?)
-			@doc = Doc.store_hdoc!(hdoc)
-			@project.add_doc!(@doc)
+			if medium.present? && params[:generate_text_from_media] == '1'
+				active_job = GenerateDocTextFromMediaJob.perform_later(@project, current_user, hdoc.to_h, medium)
+				notice = t('controllers.docs.text_generation_started', job_name: active_job.job_name)
+				redirect_path = project_docs_path(@project.name)
+			else
+				hdoc = Doc.hdoc_normalize!(hdoc, current_user, current_user.root?)
+				@doc = Doc.store_hdoc!(hdoc)
+				@project.add_doc!(@doc)
+				notice = t('controllers.shared.successfully_created', model: t('activerecord.models.doc'))
+				redirect_path = show_project_sourcedb_sourceid_docs_path(@project.name, @doc.sourcedb, @doc.sourceid)
+			end
 
 			respond_to do |format|
-				format.html { redirect_to show_project_sourcedb_sourceid_docs_path(@project.name, hdoc[:sourcedb], hdoc[:sourceid]), notice: t('controllers.shared.successfully_created', :model => t('activerecord.models.doc')) }
+				format.html { redirect_to redirect_path, notice: notice }
 				format.json { render json: @doc.to_hash, status: :created, location: @doc }
 			end
 		rescue => e
