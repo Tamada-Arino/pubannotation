@@ -24,6 +24,7 @@ class MediaTranscript < ApplicationRecord
   validates :media_transcription_task_id, uniqueness: true, allow_nil: true
   validates :doc_id, uniqueness: true, allow_nil: true
   validate :medium_not_image
+  validate :doc_has_matching_medium
   validate :segments_are_valid
 
   # The subset of `segments` that are actual speech, excluding Whisper's non-speech labels
@@ -51,6 +52,10 @@ class MediaTranscript < ApplicationRecord
 
   def medium_not_image
     errors.add(:medium, 'must not be an image') if medium&.image?
+  end
+
+  def doc_has_matching_medium
+    errors.add(:doc, 'must have the same medium as this transcript') if doc && doc.medium != medium
   end
 
   def segments_are_valid
