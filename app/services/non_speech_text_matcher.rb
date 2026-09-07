@@ -17,7 +17,7 @@ class NonSpeechTextMatcher
   BRACKETED_PATTERN = /\A[\(\[](.+)[\)\]]\z/
 
   def self.match?(text)
-    return false if text.blank?
+    return true if text.blank? # no text transcribed at all is not speech either
 
     stripped = text.strip
     return true if stripped == '♪'

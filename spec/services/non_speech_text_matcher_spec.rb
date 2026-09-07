@@ -32,9 +32,9 @@ RSpec.describe NonSpeechTextMatcher do
       expect(described_class.match?('(footsteps approaching)')).to be false
     end
 
-    it 'does not match blank text' do
-      expect(described_class.match?('')).to be false
-      expect(described_class.match?(nil)).to be false
+    it 'matches blank text' do
+      expect(described_class.match?('')).to be true
+      expect(described_class.match?(nil)).to be true
     end
   end
 end
