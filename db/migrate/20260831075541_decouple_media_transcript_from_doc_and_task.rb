@@ -20,9 +20,9 @@ class DecoupleMediaTranscriptFromDocAndTask < ActiveRecord::Migration[8.1]
 
     change_column_null :media_transcripts, :medium_id, false
 
-    remove_foreign_key :media_transcripts, :docs
+    # doc_id's existing FK is already on_delete: :cascade (see CreateMediaTranscripts), which is
+    # also what we want after decoupling, so it's left untouched — only its nullability changes.
     change_column_null :media_transcripts, :doc_id, true
-    add_foreign_key :media_transcripts, :docs, on_delete: :nullify
 
     add_reference :media_transcripts, :media_transcription_task, null: true,
                   foreign_key: { on_delete: :nullify }, index: { unique: true }
@@ -30,8 +30,6 @@ class DecoupleMediaTranscriptFromDocAndTask < ActiveRecord::Migration[8.1]
 
   def down
     remove_reference :media_transcripts, :media_transcription_task
-
-    remove_foreign_key :media_transcripts, :docs
 
     null_doc_count = select_value('SELECT COUNT(*) FROM media_transcripts WHERE doc_id IS NULL').to_i
     if null_doc_count.positive?
@@ -42,7 +40,6 @@ class DecoupleMediaTranscriptFromDocAndTask < ActiveRecord::Migration[8.1]
     end
 
     change_column_null :media_transcripts, :doc_id, false
-    add_foreign_key :media_transcripts, :docs, on_delete: :cascade
 
     remove_reference :media_transcripts, :medium
   end

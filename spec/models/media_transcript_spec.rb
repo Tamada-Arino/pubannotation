@@ -97,13 +97,13 @@ RSpec.describe MediaTranscript, type: :model do
       expect(media_transcript.reload.media_transcription_task_id).to be_nil
     end
 
-    it 'is not destroyed when its doc is destroyed, but the reference is nullified' do
+    it 'is destroyed when its doc is destroyed' do
       doc = create(:doc)
       media_transcript = create(:media_transcript, doc: doc)
 
       doc.destroy
 
-      expect(media_transcript.reload.doc_id).to be_nil
+      expect(MediaTranscript.exists?(media_transcript.id)).to be false
     end
   end
 

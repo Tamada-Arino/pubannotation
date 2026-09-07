@@ -542,7 +542,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_31_075541) do
   add_foreign_key "media", "users"
   add_foreign_key "media_transcription_tasks", "jobs", on_delete: :cascade
   add_foreign_key "media_transcription_tasks", "media", on_delete: :cascade
-  add_foreign_key "media_transcripts", "docs", on_delete: :nullify
+  add_foreign_key "media_transcripts", "docs", on_delete: :cascade
   add_foreign_key "media_transcripts", "media", on_delete: :cascade
   add_foreign_key "media_transcripts", "media_transcription_tasks", on_delete: :nullify
   add_foreign_key "paragraph_attrivutes", "attrivutes"

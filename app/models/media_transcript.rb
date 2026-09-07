@@ -1,9 +1,11 @@
 class MediaTranscript < ApplicationRecord
-  # `medium` is stored directly (not delegated through doc/media_transcription_task) because
-  # both of those associations are deliberately severable without destroying this record — a
-  # Doc never exists at all for a no-speech result, and a MediaTranscriptionTask can be cleaned
-  # up independently (see the has_one :media_transcript, dependent: :nullify on each). medium_id
-  # is the one link this record can't survive losing, so it's the only one that cascades.
+  # `medium` is stored directly (not delegated through doc/media_transcription_task) since both
+  # of those associations are optional here: a Doc never exists at all for a no-speech result,
+  # and a MediaTranscriptionTask can be cleaned up independently of this record (see the
+  # has_one :media_transcript, dependent: :nullify on MediaTranscriptionTask). A Doc, once it
+  # does exist for this record, is not severable the same way — Doc has_one :media_transcript,
+  # dependent: :destroy, so deleting the Doc that was generated from this transcript takes the
+  # transcript with it.
   belongs_to :medium
   belongs_to :media_transcription_task, optional: true
   belongs_to :doc, optional: true
