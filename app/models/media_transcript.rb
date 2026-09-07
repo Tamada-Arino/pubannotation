@@ -30,12 +30,10 @@ class MediaTranscript < ApplicationRecord
   # The subset of `segments` that are actual speech, excluding Whisper's non-speech labels
   # (e.g. "(music)", "(applause)"). Non-speech segments are kept in `segments` rather than
   # discarded, since the raw transcript may still be useful, but they don't count toward
-  # whether the medium contains speech or what the generated Doc's body should be.
-  # Guards against segments not matching the documented shape (e.g. nil, or a malformed
-  # element) rather than raising, since this can be called before validation runs.
+  # whether the medium contains speech or what the generated Doc's body should be. Assumes
+  # segments is already an Array, as segments_are_valid requires — not meant to be called on
+  # an instance that hasn't been validated (e.g. persisted, or built via create!) yet.
   def speech_segments
-    return [] unless segments.is_a?(Array)
-
     segments.select { |segment| valid_segment?(segment) }
             .reject { |segment| NonSpeechTextMatcher.match?(segment['text']) }
   end
