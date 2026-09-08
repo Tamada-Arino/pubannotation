@@ -1,4 +1,4 @@
-class DocGenerationFromMedia
+class MediaDocCreationService
   def initialize(project:, medium:, user:, attributes:)
     @project = project
     @medium = medium

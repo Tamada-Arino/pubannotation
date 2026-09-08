@@ -2,7 +2,7 @@
 
 require 'rails_helper'
 
-RSpec.describe DocGenerationFromMedia do
+RSpec.describe MediaDocCreationService do
   let(:user) { create(:user).tap { |u| u.confirm } }
   let(:project) { create(:project, user: user) }
   let(:image_medium) do

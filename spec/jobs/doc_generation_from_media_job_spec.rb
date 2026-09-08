@@ -8,19 +8,19 @@ RSpec.describe DocGenerationFromMediaJob, type: :job do
   let(:attributes) { { sourcedb: 'Example', sourceid: '001' } }
 
   describe '#perform' do
-    let(:generation) { instance_double(DocGenerationFromMedia, generate_transcript: 'A generated transcript.', save_doc: nil) }
+    let(:generation) { instance_double(MediaDocCreationService, generate_transcript: 'A generated transcript.', save_doc: nil) }
 
     before do
-      allow(DocGenerationFromMedia).to receive(:new).and_return(generation)
+      allow(MediaDocCreationService).to receive(:new).and_return(generation)
     end
 
     context 'with an image medium' do
       let(:medium) { create(:medium, user: user, media_type: :image, content_type: 'image/png') }
 
-      it 'delegates to DocGenerationFromMedia with the given project, medium, user and attributes' do
+      it 'delegates to MediaDocCreationService with the given project, medium, user and attributes' do
         DocGenerationFromMediaJob.perform_now(project, medium, user, attributes)
 
-        expect(DocGenerationFromMedia).to have_received(:new).with(project:, medium:, user:, attributes:)
+        expect(MediaDocCreationService).to have_received(:new).with(project:, medium:, user:, attributes:)
         expect(generation).to have_received(:generate_transcript)
         expect(generation).to have_received(:save_doc).with('A generated transcript.')
       end
