@@ -4,10 +4,11 @@ class DocGenerationFromMediaJob < ApplicationJob
   queue_as :general
 
   def perform(project, medium, user, attributes)
-    service = DocGenerationFromMedia.new(project:, medium:, user:, attributes:)
-    body = MediaTranscriptionTask.create!(medium:, job: @job).process { service.generate_transcript }
+    task = MediaTranscriptionTask.create!(medium:, job: @job)
 
-    service.save_doc(body)
+    body = task.process { MediaTextGenerationService.new(medium).call }
+
+    MediaDocCreationService.new(project:, medium:, user:, attributes:).save_doc(body)
   end
 
   def job_name

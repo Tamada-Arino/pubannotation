@@ -1,34 +1,14 @@
-class DocGenerationFromMedia
-  def initialize(project:, medium:, user:, attributes:)
-    @project = project
+class MediaTextGenerationService
+  def initialize(medium)
     @medium = medium
-    @user = user
-    @attributes = attributes
   end
 
-  def generate_transcript
+  def call
     validate_medium!
 
     @medium.file.open do |file|
       generate_text(file.path)
     end
-  end
-
-  def save_doc(body)
-    hdoc = Doc.hdoc_normalize!(
-      {
-        **@attributes,
-        username: @user.username,
-        body:,
-        medium_id: @medium.id
-      },
-      @user,
-      @user.root?
-    )
-
-    doc = Doc.store_hdoc!(hdoc)
-    @project.add_doc!(doc)
-    doc
   end
 
   private
