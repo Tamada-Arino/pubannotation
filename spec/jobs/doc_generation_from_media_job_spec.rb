@@ -8,21 +8,24 @@ RSpec.describe DocGenerationFromMediaJob, type: :job do
   let(:attributes) { { sourcedb: 'Example', sourceid: '001' } }
 
   describe '#perform' do
-    let(:generation) { instance_double(MediaDocCreationService, generate_transcript: 'A generated transcript.', save_doc: nil) }
+    let(:text_generation) { instance_double(MediaTextGenerationService, call: 'A generated transcript.') }
+    let(:doc_creation) { instance_double(MediaDocCreationService, save_doc: nil) }
 
     before do
-      allow(MediaDocCreationService).to receive(:new).and_return(generation)
+      allow(MediaTextGenerationService).to receive(:new).and_return(text_generation)
+      allow(MediaDocCreationService).to receive(:new).and_return(doc_creation)
     end
 
     context 'with an image medium' do
       let(:medium) { create(:medium, user: user, media_type: :image, content_type: 'image/png') }
 
-      it 'delegates to MediaDocCreationService with the given project, medium, user and attributes' do
+      it 'delegates text generation to MediaTextGenerationService and doc creation to MediaDocCreationService' do
         DocGenerationFromMediaJob.perform_now(project, medium, user, attributes)
 
+        expect(MediaTextGenerationService).to have_received(:new).with(medium)
+        expect(text_generation).to have_received(:call)
         expect(MediaDocCreationService).to have_received(:new).with(project:, medium:, user:, attributes:)
-        expect(generation).to have_received(:generate_transcript)
-        expect(generation).to have_received(:save_doc).with('A generated transcript.')
+        expect(doc_creation).to have_received(:save_doc).with('A generated transcript.')
       end
 
       it 'creates a MediaTranscriptionTask and marks it succeeded' do
@@ -45,9 +48,9 @@ RSpec.describe DocGenerationFromMediaJob, type: :job do
         expect(task).to be_succeeded
       end
 
-      context 'when generating the transcript fails' do
+      context 'when generating the text fails' do
         before do
-          allow(generation).to receive(:generate_transcript).and_raise(StandardError, 'transcription blew up')
+          allow(text_generation).to receive(:call).and_raise(StandardError, 'transcription blew up')
         end
 
         it 'marks the task failed and re-raises' do
@@ -60,9 +63,9 @@ RSpec.describe DocGenerationFromMediaJob, type: :job do
         end
       end
 
-      context 'when saving the doc fails after a successful transcript' do
+      context 'when saving the doc fails after successfully generating text' do
         before do
-          allow(generation).to receive(:save_doc).and_raise(StandardError, 'doc save blew up')
+          allow(doc_creation).to receive(:save_doc).and_raise(StandardError, 'doc save blew up')
         end
 
         it 'leaves the task succeeded and re-raises' do
