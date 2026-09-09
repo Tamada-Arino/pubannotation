@@ -190,6 +190,23 @@ RSpec.describe MediaTranscript, type: :model do
     end
   end
 
+  describe '#speech_text' do
+    it 'joins the text of only the speech segments' do
+      media_transcript = build(:media_transcript, segments: [
+        { 'text' => '(upbeat music)', 'start_ms' => 0, 'end_ms' => 3000 },
+        { 'text' => 'Welcome to the conference.', 'start_ms' => 3000, 'end_ms' => 6000 }
+      ])
+
+      expect(media_transcript.speech_text).to eq('Welcome to the conference.')
+    end
+
+    it 'is blank when there are no speech segments' do
+      media_transcript = build(:media_transcript, segments: [{ 'text' => '(music)', 'start_ms' => 0, 'end_ms' => 100 }])
+
+      expect(media_transcript.speech_text).to eq('')
+    end
+  end
+
   describe 'text' do
     it 'defaults to nil' do
       medium = create(:medium, media_type: :audio, content_type: 'audio/mpeg')

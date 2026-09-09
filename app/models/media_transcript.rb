@@ -47,6 +47,10 @@ class MediaTranscript < ApplicationRecord
     speech_segments.any?
   end
 
+  def speech_text
+    speech_segments.pluck('text').join(' ')
+  end
+
   private
 
   def doc_has_matching_medium
