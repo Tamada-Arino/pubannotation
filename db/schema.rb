@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_31_075541) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_09_045333) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -307,6 +307,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_31_075541) do
     t.bigint "media_transcription_task_id"
     t.bigint "medium_id", null: false
     t.json "segments", default: [], null: false
+    t.text "text"
     t.datetime "updated_at", null: false
     t.index ["doc_id"], name: "index_media_transcripts_on_doc_id", unique: true
     t.index ["media_transcription_task_id"], name: "index_media_transcripts_on_media_transcription_task_id", unique: true
