@@ -10,6 +10,11 @@ class MediaTranscript < ApplicationRecord
   belongs_to :media_transcription_task, optional: true
   belongs_to :doc, optional: true
 
+  # `text` is the plain-text body for this transcript (e.g. an image caption, or the
+  # already-resolved speech transcript for audio/video), used as the generated Doc's body.
+  # It's nullable rather than required: which media types populate it, and how, is up to the
+  # caller that creates this record, not a universal invariant this model enforces.
+  #
   # `segments` is an array of timed transcript segments. Each element is a hash with string keys:
   #   'text'     - String, the transcribed text for the segment (may be blank, or a non-speech
   #                label such as "(music)" — see NonSpeechTextMatcher).
@@ -18,12 +23,12 @@ class MediaTranscript < ApplicationRecord
   # The interval is [start_ms, end_ms) (start inclusive, end exclusive). Segments are ordered
   # chronologically and must not overlap: each segment's start_ms must be >= the previous
   # segment's end_ms. Gaps are allowed (e.g. silence between segments), so consecutive segments
-  # are not required to touch exactly.
+  # are not required to touch exactly. Media types that don't produce segments (e.g. images)
+  # simply leave this at its default empty array.
   # An empty array, or an array containing only non-speech segments, means no speech was
   # detected in the media — see #speech?.
   validates :media_transcription_task_id, uniqueness: true, allow_nil: true
   validates :doc_id, uniqueness: true, allow_nil: true
-  validate :medium_not_image
   validate :doc_has_matching_medium
   validate :segments_are_valid
 
@@ -42,15 +47,7 @@ class MediaTranscript < ApplicationRecord
     speech_segments.any?
   end
 
-  def body
-    speech_segments.pluck('text').join(' ')
-  end
-
   private
-
-  def medium_not_image
-    errors.add(:medium, 'must not be an image') if medium&.image?
-  end
 
   def doc_has_matching_medium
     errors.add(:doc, 'must have the same medium as this transcript') if doc && doc.medium != medium

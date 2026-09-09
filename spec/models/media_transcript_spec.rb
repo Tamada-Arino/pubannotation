@@ -49,10 +49,10 @@ RSpec.describe MediaTranscript, type: :model do
       expect(build(:media_transcript, medium: medium, doc: nil)).to be_valid
     end
 
-    it 'rejects a medium whose media_type is image' do
+    it 'accepts a medium whose media_type is image' do
       medium = create(:medium, media_type: :image, content_type: 'image/jpeg')
 
-      expect(build(:media_transcript, medium: medium)).not_to be_valid
+      expect(build(:media_transcript, medium: medium, segments: [], text: 'A generated caption.')).to be_valid
     end
 
     it 'accepts a doc whose medium matches this transcript\'s medium' do
@@ -190,20 +190,21 @@ RSpec.describe MediaTranscript, type: :model do
     end
   end
 
-  describe '#body' do
-    it 'joins the text of only the speech segments' do
-      media_transcript = build(:media_transcript, segments: [
-        { 'text' => '(upbeat music)', 'start_ms' => 0, 'end_ms' => 3000 },
-        { 'text' => 'Welcome to the conference.', 'start_ms' => 3000, 'end_ms' => 6000 }
-      ])
+  describe 'text' do
+    it 'defaults to nil' do
+      medium = create(:medium, media_type: :audio, content_type: 'audio/mpeg')
 
-      expect(media_transcript.body).to eq('Welcome to the conference.')
+      media_transcript = MediaTranscript.new(medium: medium)
+
+      expect(media_transcript.text).to be_nil
     end
 
-    it 'is blank when there are no speech segments' do
-      media_transcript = build(:media_transcript, segments: [{ 'text' => '(music)', 'start_ms' => 0, 'end_ms' => 100 }])
+    it 'is valid when blank' do
+      expect(build(:media_transcript, text: nil)).to be_valid
+    end
 
-      expect(media_transcript.body).to eq('')
+    it 'is valid with a value' do
+      expect(build(:media_transcript, text: 'A generated caption.')).to be_valid
     end
   end
 
