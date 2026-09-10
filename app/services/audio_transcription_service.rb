@@ -10,8 +10,7 @@ class AudioTranscriptionService
   def call
     raise ArgumentError, "Audio file appears to be silent." if AudioSilenceDetector.new(@audio_path).silent?
 
-    segments = parse_segments(transcribe, audio_duration_ms)
-    { text: segments.map { |segment| segment['text'] }.join(' '), segments: }
+    parse_segments(transcribe, audio_duration_ms)
   end
 
   private

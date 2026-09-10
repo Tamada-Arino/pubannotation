@@ -56,11 +56,10 @@ RSpec.describe AudioTranscriptionService do
         stub_ffprobe(6.0)
       end
 
-      it 'returns the transcribed text with timed segments' do
+      it 'returns the timed segments' do
         result = described_class.new(audio_path).call
 
-        expect(result[:text]).to eq('Ask not what your country can do for you.')
-        expect(result[:segments]).to eq(
+        expect(result).to eq(
           [
             { 'text' => 'Ask not what your country', 'start_ms' => 0, 'end_ms' => 3500 },
             { 'text' => 'can do for you.', 'start_ms' => 3500, 'end_ms' => 6000 }
@@ -85,7 +84,7 @@ RSpec.describe AudioTranscriptionService do
       it 'sorts the segments by start_ms' do
         result = described_class.new(audio_path).call
 
-        expect(result[:segments]).to eq(
+        expect(result).to eq(
           [
             { 'text' => 'Ask not what your country', 'start_ms' => 0, 'end_ms' => 3500 },
             { 'text' => 'can do for you.', 'start_ms' => 3500, 'end_ms' => 6000 }
@@ -107,7 +106,7 @@ RSpec.describe AudioTranscriptionService do
       it 'clamps end_ms to the probed audio duration' do
         result = described_class.new(audio_path).call
 
-        expect(result[:segments]).to eq([{ 'text' => 'Hello world.', 'start_ms' => 0, 'end_ms' => 4980 }])
+        expect(result).to eq([{ 'text' => 'Hello world.', 'start_ms' => 0, 'end_ms' => 4980 }])
       end
     end
 
@@ -127,7 +126,7 @@ RSpec.describe AudioTranscriptionService do
       it 'stops parsing instead of including the trailing out-of-range segment' do
         result = described_class.new(audio_path).call
 
-        expect(result[:segments]).to eq(
+        expect(result).to eq(
           [{ 'text' => 'Ask not what your country', 'start_ms' => 0, 'end_ms' => 3500 }]
         )
       end
@@ -232,7 +231,7 @@ RSpec.describe AudioTranscriptionService do
 
       it 'invokes the configured binary' do
         result = described_class.new(audio_path).call
-        expect(result[:text]).to eq('transcript')
+        expect(result).to eq([{ 'text' => 'transcript', 'start_ms' => 0, 'end_ms' => 1000 }])
       end
     end
 

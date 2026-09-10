@@ -19,13 +19,13 @@ RSpec.describe VideoTranscriptionService do
         end
         allow(AudioTranscriptionService).to receive(:new) do |audio_path|
           expect(audio_path).to end_with('.wav')
-          instance_double(AudioTranscriptionService, call: { text: 'A generated transcript.', segments: [] })
+          instance_double(AudioTranscriptionService, call: [{ 'text' => 'A generated transcript.', 'start_ms' => 0, 'end_ms' => 1000 }])
         end
       end
 
       it 'transcribes the audio extracted from the video' do
         result = described_class.new(video_path).call
-        expect(result).to eq({ text: 'A generated transcript.', segments: [] })
+        expect(result).to eq([{ 'text' => 'A generated transcript.', 'start_ms' => 0, 'end_ms' => 1000 }])
       end
     end
 

@@ -147,7 +147,7 @@ RSpec.describe 'DocGenerationsController', type: :request do
         )
 
         allow(VideoTranscriptionService).to receive(:new).and_return(
-          instance_double(VideoTranscriptionService, call: { text: 'A generated transcript.', segments: [] })
+          instance_double(VideoTranscriptionService, call: [{ 'text' => 'A generated transcript.', 'start_ms' => 0, 'end_ms' => 1000 }])
         )
 
         perform_enqueued_jobs do

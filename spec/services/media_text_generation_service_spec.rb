@@ -47,11 +47,14 @@ RSpec.describe MediaTextGenerationService do
     context 'with a valid audio medium' do
       before do
         allow(AudioTranscriptionService).to receive(:new).and_return(
-          instance_double(AudioTranscriptionService, call: { text: 'A generated transcript.', segments: [] })
+          instance_double(AudioTranscriptionService, call: [
+            { 'text' => 'A generated', 'start_ms' => 0, 'end_ms' => 500 },
+            { 'text' => 'transcript.', 'start_ms' => 500, 'end_ms' => 1000 }
+          ])
         )
       end
 
-      it 'returns the generated transcript' do
+      it 'returns the transcript joined from the segments' do
         result = described_class.new(audio_medium).call
 
         expect(result).to eq('A generated transcript.')
@@ -61,11 +64,14 @@ RSpec.describe MediaTextGenerationService do
     context 'with a valid video medium' do
       before do
         allow(VideoTranscriptionService).to receive(:new).and_return(
-          instance_double(VideoTranscriptionService, call: { text: 'A generated transcript.', segments: [] })
+          instance_double(VideoTranscriptionService, call: [
+            { 'text' => 'A generated', 'start_ms' => 0, 'end_ms' => 500 },
+            { 'text' => 'transcript.', 'start_ms' => 500, 'end_ms' => 1000 }
+          ])
         )
       end
 
-      it 'returns the transcript generated from the video' do
+      it 'returns the transcript joined from the segments' do
         result = described_class.new(video_medium).call
 
         expect(result).to eq('A generated transcript.')
