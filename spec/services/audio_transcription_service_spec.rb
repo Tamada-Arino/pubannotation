@@ -68,31 +68,6 @@ RSpec.describe AudioTranscriptionService do
       end
     end
 
-    context 'when whisper-cli emits segments out of chronological order' do
-      before do
-        success_status = instance_double(Process::Status, success?: true)
-        stdout = <<~TEXT
-          [00:00:03.500 --> 00:00:06.000]   can do for you.
-          [00:00:00.000 --> 00:00:03.500]   Ask not what your country
-        TEXT
-        allow(Open3).to receive(:capture3)
-          .with('whisper-cli', '-m', model_path, '-f', audio_path, '-np')
-          .and_return([stdout, '', success_status])
-        stub_ffprobe(6.0)
-      end
-
-      it 'sorts the segments by start_ms' do
-        result = described_class.new(audio_path).call
-
-        expect(result).to eq(
-          [
-            { 'text' => 'Ask not what your country', 'start_ms' => 0, 'end_ms' => 3500 },
-            { 'text' => 'can do for you.', 'start_ms' => 3500, 'end_ms' => 6000 }
-          ]
-        )
-      end
-    end
-
     context 'when a segment offset overruns the audio duration' do
       before do
         success_status = instance_double(Process::Status, success?: true)

@@ -61,7 +61,7 @@ class AudioTranscriptionService
       segments << { 'text' => match[9].strip, 'start_ms' => start_ms, 'end_ms' => end_ms }
     end
 
-    segments.sort_by { |segment| segment['start_ms'] }
+    segments
   end
 
   def timestamp_to_ms(hours, minutes, seconds, millis)
