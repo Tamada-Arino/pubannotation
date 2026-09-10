@@ -55,7 +55,7 @@ class AudioTranscriptionService
       end_ms = clamp(timestamp_to_ms(match[5], match[6], match[7], match[8]), duration_ms)
 
       { 'text' => match[9].strip, 'start_ms' => start_ms, 'end_ms' => end_ms }
-    end
+    end.sort_by { |segment| segment['start_ms'] }
   end
 
   def timestamp_to_ms(hours, minutes, seconds, millis)
