@@ -17,9 +17,9 @@ class MediaTextGenerationService
     if @medium.image?
       ImageCaptionService.new(file_path).call
     elsif @medium.audio?
-      AudioTranscriptionService.new(file_path).call
+      AudioTranscriptionService.new(file_path).call[:text]
     elsif @medium.video?
-      VideoTranscriptionService.new(file_path).call
+      VideoTranscriptionService.new(file_path).call[:text]
     else
       raise ArgumentError, "Unsupported media type: #{@medium.media_type.inspect}"
     end

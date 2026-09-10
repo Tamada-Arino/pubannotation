@@ -46,7 +46,9 @@ RSpec.describe MediaTextGenerationService do
 
     context 'with a valid audio medium' do
       before do
-        allow(AudioTranscriptionService).to receive(:new).and_return(instance_double(AudioTranscriptionService, call: 'A generated transcript.'))
+        allow(AudioTranscriptionService).to receive(:new).and_return(
+          instance_double(AudioTranscriptionService, call: { text: 'A generated transcript.', segments: [] })
+        )
       end
 
       it 'returns the generated transcript' do
@@ -58,7 +60,9 @@ RSpec.describe MediaTextGenerationService do
 
     context 'with a valid video medium' do
       before do
-        allow(VideoTranscriptionService).to receive(:new).and_return(instance_double(VideoTranscriptionService, call: 'A generated transcript.'))
+        allow(VideoTranscriptionService).to receive(:new).and_return(
+          instance_double(VideoTranscriptionService, call: { text: 'A generated transcript.', segments: [] })
+        )
       end
 
       it 'returns the transcript generated from the video' do
