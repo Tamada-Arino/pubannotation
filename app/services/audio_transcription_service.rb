@@ -10,6 +10,13 @@ class AudioTranscriptionService
   def call
     raise ArgumentError, "Audio file appears to be silent." if AudioSilenceDetector.new(@audio_path).silent?
 
+    segments = parse_segments(transcribe, audio_duration_ms)
+    { text: segments.map { |segment| segment['text'] }.join(' '), segments: }
+  end
+
+  private
+
+  def transcribe
     cli_path   = ENV.fetch('WHISPER_CLI_PATH', 'whisper-cli')
     model_path = File.expand_path(ENV.fetch('WHISPER_MODEL_PATH'))
 
@@ -17,32 +24,7 @@ class AudioTranscriptionService
     stdout, stderr, status = Open3.capture3(cli_path, '-m', model_path, '-f', @audio_path, '-np')
     raise "Whisper transcription failed (status #{status.exitstatus}): #{stderr.strip}" unless status.success?
 
-    segments = parse_segments(stdout)
-    { text: segments.map { |segment| segment['text'] }.join(' '), segments: }
-  end
-
-  private
-
-  def parse_segments(stdout)
-    duration_ms = audio_duration_ms
-
-    stdout.each_line.filter_map do |line|
-      match = SEGMENT_LINE.match(line.strip)
-      next unless match
-
-      start_ms = clamp(timestamp_to_ms(match[1], match[2], match[3], match[4]), duration_ms)
-      end_ms = clamp(timestamp_to_ms(match[5], match[6], match[7], match[8]), duration_ms)
-
-      { 'text' => match[9].strip, 'start_ms' => start_ms, 'end_ms' => end_ms }
-    end
-  end
-
-  def timestamp_to_ms(hours, minutes, seconds, millis)
-    ((hours.to_i * 3600 + minutes.to_i * 60 + seconds.to_i) * 1000) + millis.to_i
-  end
-
-  def clamp(value_ms, duration_ms)
-    [value_ms, duration_ms].min
+    stdout
   end
 
   # Whisper pads the last segment of a chunk out to its 30s processing window rather than
@@ -62,5 +44,25 @@ class AudioTranscriptionService
     raise "ffprobe reported an invalid audio duration: #{stdout.strip.inspect}" unless duration_seconds.finite? && duration_seconds.positive?
 
     (duration_seconds * 1000).round
+  end
+
+  def parse_segments(stdout, duration_ms)
+    stdout.each_line.filter_map do |line|
+      match = SEGMENT_LINE.match(line.strip)
+      next unless match
+
+      start_ms = clamp(timestamp_to_ms(match[1], match[2], match[3], match[4]), duration_ms)
+      end_ms = clamp(timestamp_to_ms(match[5], match[6], match[7], match[8]), duration_ms)
+
+      { 'text' => match[9].strip, 'start_ms' => start_ms, 'end_ms' => end_ms }
+    end
+  end
+
+  def timestamp_to_ms(hours, minutes, seconds, millis)
+    ((hours.to_i * 3600 + minutes.to_i * 60 + seconds.to_i) * 1000) + millis.to_i
+  end
+
+  def clamp(value_ms, duration_ms)
+    [value_ms, duration_ms].min
   end
 end
