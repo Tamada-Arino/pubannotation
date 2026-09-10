@@ -104,10 +104,32 @@ RSpec.describe AudioTranscriptionService do
         stub_ffprobe(4.98)
       end
 
-      it 'clamps start_ms and end_ms to the probed audio duration' do
+      it 'clamps end_ms to the probed audio duration' do
         result = described_class.new(audio_path).call
 
         expect(result[:segments]).to eq([{ 'text' => 'Hello world.', 'start_ms' => 0, 'end_ms' => 4980 }])
+      end
+    end
+
+    context 'when a segment starts entirely past the audio duration' do
+      before do
+        success_status = instance_double(Process::Status, success?: true)
+        stdout = <<~TEXT
+          [00:00:00.000 --> 00:00:03.500]   Ask not what your country
+          [00:00:05.000 --> 00:00:06.000]   can do for you.
+        TEXT
+        allow(Open3).to receive(:capture3)
+          .with('whisper-cli', '-m', model_path, '-f', audio_path, '-np')
+          .and_return([stdout, '', success_status])
+        stub_ffprobe(3.5)
+      end
+
+      it 'stops parsing instead of including the trailing out-of-range segment' do
+        result = described_class.new(audio_path).call
+
+        expect(result[:segments]).to eq(
+          [{ 'text' => 'Ask not what your country', 'start_ms' => 0, 'end_ms' => 3500 }]
+        )
       end
     end
 

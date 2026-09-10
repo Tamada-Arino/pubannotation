@@ -47,15 +47,22 @@ class AudioTranscriptionService
   end
 
   def parse_segments(stdout, duration_ms)
-    stdout.each_line.filter_map do |line|
+    segments = []
+
+    stdout.each_line do |line|
       match = SEGMENT_LINE.match(line.strip)
       next unless match
 
-      start_ms = clamp(timestamp_to_ms(match[1], match[2], match[3], match[4]), duration_ms)
-      end_ms = clamp(timestamp_to_ms(match[5], match[6], match[7], match[8]), duration_ms)
+      start_ms = timestamp_to_ms(match[1], match[2], match[3], match[4])
+      # Whisper output is normally chronological, so once a segment starts past the audio's
+      # actual end there's nothing legitimate left to parse.
+      break if start_ms > duration_ms
 
-      { 'text' => match[9].strip, 'start_ms' => start_ms, 'end_ms' => end_ms }
-    end.sort_by { |segment| segment['start_ms'] }
+      end_ms = clamp(timestamp_to_ms(match[5], match[6], match[7], match[8]), duration_ms)
+      segments << { 'text' => match[9].strip, 'start_ms' => start_ms, 'end_ms' => end_ms }
+    end
+
+    segments.sort_by { |segment| segment['start_ms'] }
   end
 
   def timestamp_to_ms(hours, minutes, seconds, millis)
