@@ -42,33 +42,25 @@ class AudioTranscriptionService
   end
 
   def clamp(value_ms, duration_ms)
-    return value_ms unless duration_ms
-
     [value_ms, duration_ms].min
   end
 
   # Whisper pads the last segment of a chunk out to its 30s processing window rather than
-  # the audio's actual end, so offsets are clamped against ffprobe's duration. A failed probe,
-  # one that can't determine the duration (ffprobe exits successfully but prints "N/A" for
-  # some formats), or ffprobe not being installed at all, just skips clamping instead of
-  # failing the whole transcription — ffprobe is only ever used here, for this refinement, so
-  # its absence shouldn't block whisper-cli's actual output. `Float()` is used instead of
-  # `String#to_f` because `to_f` silently accepts garbage like "N/A" or "5abc" as 0.0/5.0
-  # instead of raising, and 0 is truthy in Ruby so a lenient parse wouldn't even be caught by a
-  # nil check; `finite?` additionally guards against "Infinity"/"NaN", which parse fine but
-  # would otherwise raise FloatDomainError when rounded.
+  # the audio's actual end, so offsets are clamped against ffprobe's duration. `Float()` is
+  # used instead of `String#to_f` because `to_f` silently accepts garbage like "N/A" or
+  # "5abc" as 0.0/5.0 instead of raising, and 0 is truthy in Ruby so a lenient parse wouldn't
+  # even be caught by a nil check; `finite?` additionally guards against "Infinity"/"NaN",
+  # which parse fine but would otherwise raise FloatDomainError when rounded.
   def audio_duration_ms
-    stdout, _stderr, status = Open3.capture3(
+    stdout, stderr, status = Open3.capture3(
       'ffprobe', '-v', 'error', '-show_entries', 'format=duration',
       '-of', 'default=noprint_wrappers=1:nokey=1', @audio_path
     )
-    return nil unless status.success?
+    raise "Failed to determine audio duration via ffprobe (status #{status.exitstatus}): #{stderr.strip}" unless status.success?
 
     duration_seconds = Float(stdout.strip)
-    return nil unless duration_seconds.finite? && duration_seconds.positive?
+    raise "ffprobe reported an invalid audio duration: #{stdout.strip.inspect}" unless duration_seconds.finite? && duration_seconds.positive?
 
     (duration_seconds * 1000).round
-  rescue ArgumentError, TypeError, SystemCallError
-    nil
   end
 end

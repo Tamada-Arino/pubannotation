@@ -93,14 +93,14 @@ RSpec.describe AudioTranscriptionService do
         allow(Open3).to receive(:capture3)
           .with('whisper-cli', '-m', model_path, '-f', audio_path, '-np')
           .and_return([stdout, '', success_status])
-        failure_status = instance_double(Process::Status, success?: false)
+        failure_status = instance_double(Process::Status, success?: false, exitstatus: 1)
         allow(Open3).to receive(:capture3).with(*ffprobe_args).and_return(['', 'error', failure_status])
       end
 
-      it 'leaves the raw offsets unclamped' do
-        result = described_class.new(audio_path).call
-
-        expect(result[:segments]).to eq([{ 'text' => 'Hello world.', 'start_ms' => 0, 'end_ms' => 30_000 }])
+      it 'raises instead of returning an unclamped transcription' do
+        expect {
+          described_class.new(audio_path).call
+        }.to raise_error(/Failed to determine audio duration via ffprobe/)
       end
     end
 
@@ -114,10 +114,10 @@ RSpec.describe AudioTranscriptionService do
         allow(Open3).to receive(:capture3).with(*ffprobe_args).and_return(["N/A\n", '', success_status])
       end
 
-      it 'leaves the raw offsets unclamped instead of collapsing them to 0' do
-        result = described_class.new(audio_path).call
-
-        expect(result[:segments]).to eq([{ 'text' => 'Hello world.', 'start_ms' => 0, 'end_ms' => 30_000 }])
+      it 'raises instead of collapsing the offsets to 0' do
+        expect {
+          described_class.new(audio_path).call
+        }.to raise_error(ArgumentError)
       end
     end
 
@@ -131,10 +131,10 @@ RSpec.describe AudioTranscriptionService do
         allow(Open3).to receive(:capture3).with(*ffprobe_args).and_return(["5abc\n", '', success_status])
       end
 
-      it 'leaves the raw offsets unclamped instead of misreading a partial number' do
-        result = described_class.new(audio_path).call
-
-        expect(result[:segments]).to eq([{ 'text' => 'Hello world.', 'start_ms' => 0, 'end_ms' => 30_000 }])
+      it 'raises instead of misreading a partial number' do
+        expect {
+          described_class.new(audio_path).call
+        }.to raise_error(ArgumentError)
       end
     end
 
@@ -148,27 +148,27 @@ RSpec.describe AudioTranscriptionService do
         allow(Open3).to receive(:capture3).with(*ffprobe_args).and_raise(Errno::ENOENT, 'ffprobe')
       end
 
-      it 'leaves the raw offsets unclamped instead of failing the whole transcription' do
-        result = described_class.new(audio_path).call
-
-        expect(result[:segments]).to eq([{ 'text' => 'Hello world.', 'start_ms' => 0, 'end_ms' => 30_000 }])
+      it 'raises instead of silently skipping duration clamping' do
+        expect {
+          described_class.new(audio_path).call
+        }.to raise_error(Errno::ENOENT)
       end
     end
 
-    context 'when ffprobe succeeds but reports the duration as Infinity' do
+    context 'when ffprobe succeeds but reports a duration that overflows to Infinity' do
       before do
         success_status = instance_double(Process::Status, success?: true)
         stdout = "[00:00:00.000 --> 00:00:30.000]   Hello world.\n"
         allow(Open3).to receive(:capture3)
           .with('whisper-cli', '-m', model_path, '-f', audio_path, '-np')
           .and_return([stdout, '', success_status])
-        allow(Open3).to receive(:capture3).with(*ffprobe_args).and_return(["Infinity\n", '', success_status])
+        allow(Open3).to receive(:capture3).with(*ffprobe_args).and_return(["1e400\n", '', success_status])
       end
 
-      it 'leaves the raw offsets unclamped instead of raising' do
-        result = described_class.new(audio_path).call
-
-        expect(result[:segments]).to eq([{ 'text' => 'Hello world.', 'start_ms' => 0, 'end_ms' => 30_000 }])
+      it 'raises instead of later raising FloatDomainError from rounding' do
+        expect {
+          described_class.new(audio_path).call
+        }.to raise_error(/ffprobe reported an invalid audio duration/)
       end
     end
 
