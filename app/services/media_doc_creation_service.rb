@@ -1,6 +1,6 @@
 class MediaDocCreationService
   # media_transcript is expected to already be persisted (with doc: nil) by the caller.
-  def self.call(project, medium, user, attributes, media_transcript, media_transcription_task)
+  def self.call(project, medium, user, attributes, media_transcript)
     hdoc = Doc.hdoc_normalize!(
       {
         **attributes,
@@ -17,7 +17,6 @@ class MediaDocCreationService
     # Wrapped together so a failure here doesn't leave a doc visible in the project without its transcript linked.
     ActiveRecord::Base.transaction do
       media_transcript.update!(doc:)
-      media_transcription_task.succeeded!
       project.add_doc!(doc)
     end
 

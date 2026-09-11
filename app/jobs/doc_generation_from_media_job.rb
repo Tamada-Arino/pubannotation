@@ -12,7 +12,7 @@ class DocGenerationFromMediaJob < ApplicationJob
 
     return if task.no_speech?
 
-    MediaDocCreationService.call(project, medium, user, attributes, media_transcript, task)
+    MediaDocCreationService.call(project, medium, user, attributes, media_transcript)
   end
 
   def job_name

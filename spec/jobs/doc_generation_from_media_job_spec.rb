@@ -37,7 +37,7 @@ RSpec.describe DocGenerationFromMediaJob, type: :job do
         task = MediaTranscriptionTask.find_by(medium: medium)
         media_transcript = MediaTranscript.find_by(medium: medium)
         expect(MediaTextGenerationService).to have_received(:new).with(medium)
-        expect(MediaDocCreationService).to have_received(:call).with(project, medium, user, attributes, media_transcript, task)
+        expect(MediaDocCreationService).to have_received(:call).with(project, medium, user, attributes, media_transcript)
       end
 
       it 'creates a MediaTranscriptionTask and marks it succeeded' do
@@ -75,7 +75,7 @@ RSpec.describe DocGenerationFromMediaJob, type: :job do
 
         task = MediaTranscriptionTask.find_by(medium: medium)
         media_transcript = MediaTranscript.find_by(medium: medium)
-        expect(MediaDocCreationService).to have_received(:call).with(project, medium, user, attributes, media_transcript, task)
+        expect(MediaDocCreationService).to have_received(:call).with(project, medium, user, attributes, media_transcript)
       end
 
       context 'when generating the text fails' do

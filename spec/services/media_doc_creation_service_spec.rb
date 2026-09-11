@@ -14,7 +14,7 @@ RSpec.describe MediaDocCreationService do
 
   describe '.call' do
     it "creates a doc from the transcript's text, linked to the medium and the project" do
-      doc = described_class.call(project, medium, user, attributes, media_transcript, task)
+      doc = described_class.call(project, medium, user, attributes, media_transcript)
 
       expect(doc).to be_persisted
       expect(doc.body).to eq('A generated body.')
@@ -25,17 +25,9 @@ RSpec.describe MediaDocCreationService do
     end
 
     it 'links the media_transcript to the created doc' do
-      doc = described_class.call(project, medium, user, attributes, media_transcript, task)
+      doc = described_class.call(project, medium, user, attributes, media_transcript)
 
       expect(media_transcript.reload.doc).to eq(doc)
-    end
-
-    it 'marks the media_transcription_task succeeded' do
-      task.update!(status: 'processing')
-
-      described_class.call(project, medium, user, attributes, media_transcript, task)
-
-      expect(task.reload).to be_succeeded
     end
 
     context 'when linking the transcript to the doc fails' do
@@ -43,7 +35,7 @@ RSpec.describe MediaDocCreationService do
         allow(media_transcript).to receive(:update!).and_raise(StandardError, 'update blew up')
 
         expect {
-          described_class.call(project, medium, user, attributes, media_transcript, task)
+          described_class.call(project, medium, user, attributes, media_transcript)
         }.to raise_error(StandardError, 'update blew up')
 
         doc = Doc.find_by(sourcedb: "Example@#{user.username}", sourceid: '001')
