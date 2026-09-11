@@ -15,10 +15,10 @@
 # polymorphic subject (subject_type/subject_id), spreading transcription-specific concerns
 # into every other kind of Job.
 #
-# It is kept separate from MediaTranscript because that model represents the successful
-# *output* of a transcription (the segments) and should only exist when there is real content
-# to show. MediaTranscriptionTask represents the *attempt* itself, including states (pending,
-# processing, failed) where no output exists at all.
+# It is kept separate from MediaTranscript because that model represents a transcription
+# attempt that actually ran to completion — even a blank/no-speech one — while
+# MediaTranscriptionTask represents the attempt itself, including states (pending, processing,
+# failed) where generation didn't complete at all and no MediaTranscript exists yet.
 class MediaTranscriptionTask < ApplicationRecord
   belongs_to :medium
   belongs_to :job, optional: true
