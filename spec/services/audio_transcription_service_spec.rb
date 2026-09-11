@@ -138,7 +138,7 @@ RSpec.describe AudioTranscriptionService do
       it 'raises instead of collapsing the offsets to 0' do
         expect {
           described_class.new(audio_path).call
-        }.to raise_error(ArgumentError)
+        }.to raise_error(AudioTranscriptionService::DurationDetectionError)
       end
     end
 
@@ -155,7 +155,7 @@ RSpec.describe AudioTranscriptionService do
       it 'raises instead of misreading a partial number' do
         expect {
           described_class.new(audio_path).call
-        }.to raise_error(ArgumentError)
+        }.to raise_error(AudioTranscriptionService::DurationDetectionError)
       end
     end
 

@@ -46,6 +46,8 @@ class AudioTranscriptionService
     raise DurationDetectionError, "ffprobe reported an invalid audio duration: #{stdout.strip.inspect}" unless duration_seconds.finite? && duration_seconds.positive?
 
     (duration_seconds * 1000).round
+  rescue ArgumentError => e
+    raise DurationDetectionError, e.message
   end
 
   def parse_segments(stdout, duration_ms)
