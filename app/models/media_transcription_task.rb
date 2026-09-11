@@ -34,16 +34,21 @@ class MediaTranscriptionTask < ApplicationRecord
     failed: 'failed'
   }
 
-  # Wraps a transcription attempt, transitioning through processing -> succeeded/failed and
-  # re-raising any error from the block after recording it, so the caller doesn't need to
-  # manage the task's status itself. Mirrors `transaction do ... end`.
+  # Wraps a transcription attempt, transitioning through processing -> succeeded/no_speech/failed
+  # and re-raising any error from the block after recording it, so the caller doesn't need to
+  # manage the task's status itself. Mirrors `transaction do ... end`. The block is expected to
+  # return a MediaTranscript, as MediaTextGenerationService#call does. A blank text (e.g. no
+  # speech detected in audio/video, or a blank image caption) is classified as no_speech rather
+  # than succeeded — checking text rather than segments directly is what lets this apply to
+  # images too, which never have segments to check in the first place.
   def process
     processing!
-    result = yield
-    succeeded!
-    result
+    media_transcript = yield
+    no_speech_detected = media_transcript.text.blank?
+    no_speech_detected ? no_speech! : succeeded!
+    media_transcript
   rescue StandardError
-    failed! unless succeeded?
+    failed! unless succeeded? || no_speech?
     raise
   end
 end

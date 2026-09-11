@@ -80,12 +80,33 @@ RSpec.describe MediaTranscriptionTask, type: :model do
   end
 
   describe '#process' do
-    it 'transitions to processing then succeeded, and returns the block value' do
+    it 'transitions to processing then succeeded when the transcript has text, and returns it' do
       task = create(:media_transcription_task)
+      media_transcript = build(:media_transcript, text: 'transcribed text')
 
-      result = task.process { 'transcribed text' }
+      result = task.process { media_transcript }
 
-      expect(result).to eq('transcribed text')
+      expect(result).to eq(media_transcript)
+      expect(task).to be_succeeded
+    end
+
+    it 'transitions to no_speech when the transcript has blank text' do
+      task = create(:media_transcription_task)
+      media_transcript = build(:media_transcript, text: nil, segments: [])
+
+      result = task.process { media_transcript }
+
+      expect(result).to eq(media_transcript)
+      expect(task).to be_no_speech
+    end
+
+    it 'transitions to succeeded when the transcript has text despite having no segments (e.g. an image caption)' do
+      task = create(:media_transcription_task)
+      media_transcript = build(:media_transcript, text: 'a caption', segments: [])
+
+      result = task.process { media_transcript }
+
+      expect(result).to eq(media_transcript)
       expect(task).to be_succeeded
     end
 
@@ -99,7 +120,7 @@ RSpec.describe MediaTranscriptionTask, type: :model do
       expect(task).to be_failed
     end
 
-    it 'does not overwrite an already-succeeded status if failed! itself raises' do
+    it 'does not overwrite an already-succeeded status when the block raises after setting succeeded' do
       task = create(:media_transcription_task)
 
       expect {
@@ -110,6 +131,19 @@ RSpec.describe MediaTranscriptionTask, type: :model do
       }.to raise_error(StandardError, 'boom after succeeding')
 
       expect(task.reload).to be_succeeded
+    end
+
+    it 'does not overwrite an already-no_speech status when the block raises after setting no_speech' do
+      task = create(:media_transcription_task)
+
+      expect {
+        task.process do
+          task.update!(status: 'no_speech')
+          raise StandardError, 'boom after no_speech'
+        end
+      }.to raise_error(StandardError, 'boom after no_speech')
+
+      expect(task.reload).to be_no_speech
     end
   end
 

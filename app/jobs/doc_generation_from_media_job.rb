@@ -6,9 +6,13 @@ class DocGenerationFromMediaJob < ApplicationJob
   def perform(project, medium, user, attributes)
     task = MediaTranscriptionTask.create!(medium:, job: @job)
 
-    body = task.process { MediaTextGenerationService.new(medium).call }
+    media_transcript = task.process { MediaTextGenerationService.new(medium).call }
+    media_transcript.media_transcription_task = task
+    media_transcript.save!
 
-    MediaDocCreationService.new(project:, medium:, user:, attributes:).save_doc(body)
+    return if task.no_speech?
+
+    MediaDocCreationService.call(project, medium, user, attributes, media_transcript, task)
   end
 
   def job_name
