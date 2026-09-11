@@ -17,12 +17,17 @@ class MediaTextGenerationService
     if @medium.image?
       ImageCaptionService.new(file_path).call
     elsif @medium.audio?
-      AudioTranscriptionService.new(file_path).call
+      segments_to_text(AudioTranscriptionService.new(file_path).call)
     elsif @medium.video?
-      VideoTranscriptionService.new(file_path).call
+      segments_to_text(VideoTranscriptionService.new(file_path).call)
     else
       raise ArgumentError, "Unsupported media type: #{@medium.media_type.inspect}"
     end
+  end
+
+  # Temporary: will be replaced once MediaTranscript builds this from segments itself.
+  def segments_to_text(segments)
+    segments.map { |segment| segment['text'] }.join(' ')
   end
 
   def validate_medium!
