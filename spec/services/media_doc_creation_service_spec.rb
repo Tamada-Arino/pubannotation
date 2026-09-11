@@ -31,16 +31,27 @@ RSpec.describe MediaDocCreationService do
     end
 
     context 'when linking the transcript to the doc fails' do
-      it 'raises and does not link the doc to the project' do
+      it 'raises and destroys the orphaned doc so a retry can recreate it' do
         allow(media_transcript).to receive(:update!).and_raise(StandardError, 'update blew up')
 
         expect {
           described_class.call(project, medium, user, attributes, media_transcript)
         }.to raise_error(StandardError, 'update blew up')
 
-        doc = Doc.find_by(sourcedb: "Example@#{user.username}", sourceid: '001')
-        expect(doc).to be_present
-        expect(project.docs.reload).not_to include(doc)
+        expect(Doc.find_by(sourcedb: "Example@#{user.username}", sourceid: '001')).to be_nil
+      end
+    end
+
+    context 'when adding the doc to the project fails' do
+      it 'raises and destroys the orphaned doc so a retry can recreate it' do
+        allow(project).to receive(:add_doc!).and_raise(StandardError, 'add_doc! blew up')
+
+        expect {
+          described_class.call(project, medium, user, attributes, media_transcript)
+        }.to raise_error(StandardError, 'add_doc! blew up')
+
+        expect(Doc.find_by(sourcedb: "Example@#{user.username}", sourceid: '001')).to be_nil
+        expect(media_transcript.reload.doc).to be_nil
       end
     end
   end
