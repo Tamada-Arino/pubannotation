@@ -1,4 +1,7 @@
 class AudioTranscriptionService
+  class TranscriptionError < StandardError; end
+  class DurationDetectionError < StandardError; end
+
   # Each line of whisper-cli's `-np` output looks like:
   #   [00:00:00.000 --> 00:00:03.500]   Ask not what your country
   SEGMENT_LINE = /\A\[(\d{2}):(\d{2}):(\d{2})\.(\d{3}) --> (\d{2}):(\d{2}):(\d{2})\.(\d{3})\]\s*(.*)\z/
@@ -21,7 +24,7 @@ class AudioTranscriptionService
 
     # -np keeps stdout limited to the timestamped segment lines; diagnostics go to stderr.
     stdout, stderr, status = Open3.capture3(cli_path, '-m', model_path, '-f', @audio_path, '-np')
-    raise "Whisper transcription failed (status #{status.exitstatus}): #{stderr.strip}" unless status.success?
+    raise TranscriptionError, "Whisper transcription failed (status #{status.exitstatus}): #{stderr.strip}" unless status.success?
 
     stdout
   end
@@ -37,10 +40,10 @@ class AudioTranscriptionService
       'ffprobe', '-v', 'error', '-show_entries', 'format=duration',
       '-of', 'default=noprint_wrappers=1:nokey=1', @audio_path
     )
-    raise "Failed to determine audio duration via ffprobe (status #{status.exitstatus}): #{stderr.strip}" unless status.success?
+    raise DurationDetectionError, "Failed to determine audio duration via ffprobe (status #{status.exitstatus}): #{stderr.strip}" unless status.success?
 
     duration_seconds = Float(stdout.strip)
-    raise "ffprobe reported an invalid audio duration: #{stdout.strip.inspect}" unless duration_seconds.finite? && duration_seconds.positive?
+    raise DurationDetectionError, "ffprobe reported an invalid audio duration: #{stdout.strip.inspect}" unless duration_seconds.finite? && duration_seconds.positive?
 
     (duration_seconds * 1000).round
   end

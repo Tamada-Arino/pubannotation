@@ -121,7 +121,7 @@ RSpec.describe AudioTranscriptionService do
       it 'raises instead of returning an unclamped transcription' do
         expect {
           described_class.new(audio_path).call
-        }.to raise_error(/Failed to determine audio duration via ffprobe/)
+        }.to raise_error(AudioTranscriptionService::DurationDetectionError, /Failed to determine audio duration via ffprobe/)
       end
     end
 
@@ -189,7 +189,7 @@ RSpec.describe AudioTranscriptionService do
       it 'raises instead of later raising FloatDomainError from rounding' do
         expect {
           described_class.new(audio_path).call
-        }.to raise_error(/ffprobe reported an invalid audio duration/)
+        }.to raise_error(AudioTranscriptionService::DurationDetectionError, /ffprobe reported an invalid audio duration/)
       end
     end
 
@@ -221,7 +221,7 @@ RSpec.describe AudioTranscriptionService do
       it 'raises an error including the exit status and stderr' do
         expect {
           described_class.new(audio_path).call
-        }.to raise_error(/Whisper transcription failed \(status 2\).*input file not found/)
+        }.to raise_error(AudioTranscriptionService::TranscriptionError, /Whisper transcription failed \(status 2\).*input file not found/)
       end
     end
   end
